@@ -29,7 +29,12 @@ public class PickupDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private Double distanceKm;
+
     public PickupDto() {}
+
+    public Double getDistanceKm() { return distanceKm; }
+    public void setDistanceKm(Double distanceKm) { this.distanceKm = distanceKm; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

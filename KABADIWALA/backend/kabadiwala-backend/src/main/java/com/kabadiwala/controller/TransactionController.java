@@ -32,4 +32,14 @@ public class TransactionController {
     public ResponseEntity<ApiResponse<TransactionDto>> getTransactionByPickupId(@PathVariable Long pickupId) {
         return ResponseEntity.ok(ApiResponse.success(transactionService.getTransactionByPickupId(pickupId)));
     }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<ApiResponse<TransactionDto>> completeTransaction(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Transaction completed successfully", transactionService.completeTransaction(id)));
+    }
+
+    @GetMapping("/{id}/receipt")
+    public ResponseEntity<ApiResponse<com.kabadiwala.dto.ReceiptDto>> getReceipt(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Receipt fetched successfully", transactionService.getReceiptByTransactionId(id)));
+    }
 }

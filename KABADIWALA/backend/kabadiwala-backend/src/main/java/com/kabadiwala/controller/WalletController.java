@@ -46,4 +46,10 @@ public class WalletController {
         Wallet wallet = walletService.getOrCreateWallet(user);
         return ResponseEntity.ok(ApiResponse.success(walletService.getWalletTransactions(wallet.getId())));
     }
+
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<ApiResponse<WalletTransaction>> getTransactionById(@org.springframework.web.bind.annotation.PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.success(walletService.getWalletTransactionById(id, userId)));
+    }
 }

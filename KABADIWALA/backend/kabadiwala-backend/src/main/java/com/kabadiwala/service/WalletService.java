@@ -98,4 +98,14 @@ public class WalletService {
     public List<WalletTransaction> getWalletTransactions(Long walletId) {
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(walletId);
     }
+
+    @Transactional(readOnly = true)
+    public WalletTransaction getWalletTransactionById(Long transactionId, Long userId) {
+        WalletTransaction wt = walletTransactionRepository.findById(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("WalletTransaction", "id", transactionId));
+        if (!wt.getWallet().getUser().getId().equals(userId)) {
+            throw new com.kabadiwala.exception.UnauthorizedException("Access denied: You do not own this wallet transaction.");
+        }
+        return wt;
+    }
 }

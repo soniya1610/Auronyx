@@ -164,6 +164,107 @@ public class RecyclingService {
         return mapToDto(recyclingRecordRepository.save(record));
     }
 
+    @Transactional
+    public RecyclingRecordDto markProcessing(Long recordId, String processingInfo) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Recycler recycler = recyclerRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recycler", "userId", userId));
+
+        RecyclingRecord record = recyclingRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("RecyclingRecord", "id", recordId));
+
+        validateTransition(record.getStatus(), RecyclingRecord.Status.PROCESSING);
+        record.setStatus(RecyclingRecord.Status.PROCESSING);
+        if (processingInfo != null && !processingInfo.isBlank()) {
+            record.setProcessingInfo(processingInfo);
+        }
+        return mapToDto(recyclingRecordRepository.save(record));
+    }
+
+    @Transactional
+    public RecyclingRecordDto markCompleted(Long recordId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Recycler recycler = recyclerRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recycler", "userId", userId));
+
+        RecyclingRecord record = recyclingRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("RecyclingRecord", "id", recordId));
+
+        validateTransition(record.getStatus(), RecyclingRecord.Status.RECYCLED);
+        record.setStatus(RecyclingRecord.Status.RECYCLED);
+        return mapToDto(recyclingRecordRepository.save(record));
+    }
+
+    @Transactional(readOnly = true)
+    public com.kabadiwala.dto.RecyclingTimelineDto getTimelineByRecordId(Long recordId) {
+        RecyclingRecord r = recyclingRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("RecyclingRecord", "id", recordId));
+
+        com.kabadiwala.dto.RecyclingTimelineDto timeline = new com.kabadiwala.dto.RecyclingTimelineDto();
+        timeline.setRecordId(r.getId());
+        if (r.getPickup() != null) timeline.setPickupId(r.getPickup().getId());
+        if (r.getTransaction() != null) timeline.setTransactionRef(r.getTransaction().getTransactionId());
+        if (r.getWasteCategory() != null) timeline.setCategoryName(r.getWasteCategory().getName());
+        if (r.getWasteItem() != null) timeline.setItemName(r.getWasteItem().getName());
+        timeline.setWeight(r.getWeight());
+        timeline.setCo2SavedKg(calculateCO2Saved(r.getWasteCategory(), r.getWeight()));
+        timeline.setCurrentStatus(r.getStatus().name());
+
+        RecyclingRecord.Status currentStatus = r.getStatus();
+        RecyclingRecord.Status[] orderedStages = {
+                RecyclingRecord.Status.COLLECTED,
+                RecyclingRecord.Status.SORTED,
+                RecyclingRecord.Status.AGGREGATED,
+                RecyclingRecord.Status.TRANSPORT,
+                RecyclingRecord.Status.RECEIVED,
+                RecyclingRecord.Status.PROCESSING,
+                RecyclingRecord.Status.RECYCLED
+        };
+
+        String[] titles = {
+                "Waste Collected",
+                "Sorted by Material",
+                "Aggregated at Hub",
+                "In Transit to Recycler",
+                "Received by Facility",
+                "Processing & Refining",
+                "Recycling Completed"
+        };
+
+        String[] descs = {
+                "Collected from citizen by authorized collector",
+                "Classified and grade-sorted for recovery",
+                "Aggregated with bulk load in regional distribution center",
+                "Dispatched and transported via registered logistics",
+                "Securely received and scanned into recycler facility",
+                "Undergoing mechanical/chemical reprocessing",
+                "Successfully reprocessed into certified recycled raw materials"
+        };
+
+        java.util.List<com.kabadiwala.dto.RecyclingTimelineDto.TimelineStage> stageList = new java.util.ArrayList<>();
+        int currentOrdinal = currentStatus.ordinal();
+
+        for (int i = 0; i < orderedStages.length; i++) {
+            RecyclingRecord.Status stage = orderedStages[i];
+            int stageOrdinal = stage.ordinal();
+            boolean completed = stageOrdinal <= currentOrdinal;
+            boolean isCurrent = stageOrdinal == currentOrdinal;
+            java.time.LocalDateTime ts = completed ? (isCurrent ? r.getUpdatedAt() : r.getCreatedAt()) : null;
+
+            stageList.add(new com.kabadiwala.dto.RecyclingTimelineDto.TimelineStage(
+                    stage.name(),
+                    titles[i],
+                    descs[i],
+                    completed,
+                    isCurrent,
+                    ts
+            ));
+        }
+
+        timeline.setStages(stageList);
+        return timeline;
+    }
+
     public RecyclingRecordDto mapToDto(RecyclingRecord r) {
         RecyclingRecordDto dto = new RecyclingRecordDto();
         dto.setId(r.getId());

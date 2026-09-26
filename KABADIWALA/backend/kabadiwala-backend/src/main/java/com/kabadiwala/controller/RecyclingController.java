@@ -28,6 +28,11 @@ public class RecyclingController {
         return ResponseEntity.ok(ApiResponse.success(recyclingService.getRecordById(id)));
     }
 
+    @GetMapping("/{id}/timeline")
+    public ResponseEntity<ApiResponse<com.kabadiwala.dto.RecyclingTimelineDto>> getTimeline(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(recyclingService.getTimelineByRecordId(id)));
+    }
+
     @GetMapping("/pickup/{pickupId}")
     public ResponseEntity<ApiResponse<RecyclingRecordDto>> getRecordByPickupId(@PathVariable Long pickupId) {
         return ResponseEntity.ok(ApiResponse.success(recyclingService.getRecordByPickupId(pickupId)));

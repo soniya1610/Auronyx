@@ -18,6 +18,24 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
+    @PostMapping
+    public ResponseEntity<ApiResponse<PaymentDto>> createPayment(@Valid @RequestBody PaymentRequest request) {
+        PaymentDto dto = paymentService.processPayment(request);
+        return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", dto));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PaymentDto>> getPaymentById(@PathVariable Long id) {
+        PaymentDto dto = paymentService.getPaymentById(id);
+        return ResponseEntity.ok(ApiResponse.success(dto));
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<String>> getPaymentStatus(@PathVariable Long id) {
+        String status = paymentService.getPaymentStatus(id);
+        return ResponseEntity.ok(ApiResponse.success(status));
+    }
+
     @GetMapping("/wallet")
     public ResponseEntity<ApiResponse<WalletDto>> getWallet() {
         return ResponseEntity.ok(ApiResponse.success(paymentService.getMyWallet()));

@@ -128,6 +128,59 @@ public class TransactionService {
         return mapToDto(txn);
     }
 
+    @Transactional
+    public TransactionDto completeTransaction(Long id) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        Transaction txn = transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction", "id", id));
+        if (!txn.getUser().getId().equals(currentUserId) &&
+                (txn.getCollector() == null || !txn.getCollector().getUser().getId().equals(currentUserId))) {
+            throw new UnauthorizedException("You are not authorized to complete this transaction.");
+        }
+        if (txn.getStatus() != Transaction.Status.COMPLETED) {
+            txn.setStatus(Transaction.Status.COMPLETED);
+            txn.setCompletedAt(LocalDateTime.now());
+            txn = transactionRepository.save(txn);
+        }
+        return mapToDto(txn);
+    }
+
+    @Transactional(readOnly = true)
+    public com.kabadiwala.dto.ReceiptDto getReceiptByTransactionId(Long id) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        Transaction txn = transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction", "id", id));
+        if (!txn.getUser().getId().equals(currentUserId) &&
+                (txn.getCollector() == null || !txn.getCollector().getUser().getId().equals(currentUserId))) {
+            throw new UnauthorizedException("You are not authorized to view receipt for this transaction.");
+        }
+
+        com.kabadiwala.dto.ReceiptDto receipt = new com.kabadiwala.dto.ReceiptDto();
+        receipt.setReceiptNumber("RCP-" + txn.getTransactionId());
+        receipt.setTransactionId(txn.getTransactionId());
+        if (txn.getPickup() != null) {
+            receipt.setPickupId(txn.getPickup().getId());
+        }
+        receipt.setCustomerName(txn.getUser().getName());
+        receipt.setCustomerEmail(txn.getUser().getEmail());
+        if (txn.getCollector() != null && txn.getCollector().getUser() != null) {
+            receipt.setCollectorName(txn.getCollector().getUser().getName());
+        } else {
+            receipt.setCollectorName("Authorized Collector");
+        }
+        receipt.setCategoryName(txn.getCategory() != null ? txn.getCategory().getName() : "General Waste");
+        receipt.setItemName(txn.getWasteItem() != null ? txn.getWasteItem().getName() : (txn.getCategory() != null ? txn.getCategory().getName() : "Waste"));
+        receipt.setActualWeight(txn.getActualWeight());
+        receipt.setAppliedRate(txn.getAppliedRate());
+        receipt.setFinalAmount(txn.getFinalAmount());
+        receipt.setPaymentStatus(txn.getStatus().name());
+        receipt.setPaymentMethod("WALLET");
+        receipt.setQrCode("QR-" + txn.getTransactionId());
+        receipt.setCompletedAt(txn.getCompletedAt() != null ? txn.getCompletedAt() : txn.getCreatedAt());
+
+        return receipt;
+    }
+
     public TransactionDto mapToDto(Transaction txn) {
         TransactionDto dto = new TransactionDto();
         dto.setId(txn.getId());

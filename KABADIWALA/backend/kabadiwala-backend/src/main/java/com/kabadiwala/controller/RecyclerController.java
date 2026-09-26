@@ -42,4 +42,17 @@ public class RecyclerController {
                                                                         @Valid @RequestBody RecyclingUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Recycling status updated", recyclingService.updateStatus(id, request)));
     }
+
+    @PostMapping("/records/{id}/processing")
+    public ResponseEntity<ApiResponse<RecyclingRecordDto>> markProcessing(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String info = (body != null) ? body.get("processingInfo") : "Active processing started";
+        return ResponseEntity.ok(ApiResponse.success("Status updated to PROCESSING", recyclingService.markProcessing(id, info)));
+    }
+
+    @PostMapping("/records/{id}/complete")
+    public ResponseEntity<ApiResponse<RecyclingRecordDto>> markComplete(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Recycling completed successfully", recyclingService.markCompleted(id)));
+    }
 }

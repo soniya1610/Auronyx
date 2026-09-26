@@ -9,6 +9,7 @@ import com.kabadiwala.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,20 @@ public class CollectorOperationsService {
         this.pickupService = pickupService;
     }
 
+    /**
+     * Haversine distance in kilometers between two geo-coordinates.
+     */
+    public static double calculateHaversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Earth radius in km
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round((R * c) * 100.0) / 100.0;
+    }
+
     /** Returns all REQUESTED pickups in the collector's city that are unassigned */
     @Transactional(readOnly = true)
     public List<PickupDto> getAvailablePickups() {
@@ -52,6 +67,68 @@ public class CollectorOperationsService {
         Collector collector = getCurrentCollector();
         return pickupRepository.findByAssignedCollectorIdOrderByCreatedAtDesc(collector.getId())
                 .stream().map(pickupService::mapToDto).collect(Collectors.toList());
+    }
+
+    /** Returns pickups by optional status */
+    @Transactional(readOnly = true)
+    public List<PickupDto> getPickups(String status) {
+        if (status == null || status.isBlank() || status.equalsIgnoreCase("AVAILABLE")) {
+            return getAvailablePickups();
+        }
+        if (status.equalsIgnoreCase("ASSIGNED")) {
+            return getMyAssignedPickups();
+        }
+        Collector collector = getCurrentCollector();
+        try {
+            Pickup.Status targetStatus = Pickup.Status.valueOf(status.toUpperCase());
+            return pickupRepository.findByAssignedCollectorIdOrderByCreatedAtDesc(collector.getId())
+                    .stream()
+                    .filter(p -> p.getStatus() == targetStatus)
+                    .map(pickupService::mapToDto)
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            return getAvailablePickups();
+        }
+    }
+
+    /**
+     * Returns nearby unassigned REQUESTED pickups within radiusKm,
+     * using exact Haversine distance based on actual stored coordinates.
+     */
+    @Transactional(readOnly = true)
+    public List<PickupDto> getNearbyPickups(Double latitude, Double longitude, Double radiusKm) {
+        Collector collector = getCurrentCollector();
+
+        double refLat;
+        double refLon;
+        if (latitude != null && longitude != null) {
+            refLat = latitude;
+            refLon = longitude;
+        } else if (collector.getLatitude() != null && collector.getLongitude() != null) {
+            refLat = collector.getLatitude();
+            refLon = collector.getLongitude();
+        } else {
+            // If collector has serviceArea set, fallback to serviceArea pickups
+            return getAvailablePickups();
+        }
+
+        double maxRadius = (radiusKm != null && radiusKm > 0) ? radiusKm : 25.0;
+
+        List<Pickup> allRequested = pickupRepository.findAll().stream()
+                .filter(p -> p.getStatus() == Pickup.Status.REQUESTED && p.getAssignedCollector() == null)
+                .filter(p -> p.getLatitude() != null && p.getLongitude() != null)
+                .collect(Collectors.toList());
+
+        return allRequested.stream()
+                .map(p -> {
+                    double dist = calculateHaversineDistanceKm(refLat, refLon, p.getLatitude(), p.getLongitude());
+                    PickupDto dto = pickupService.mapToDto(p);
+                    dto.setDistanceKm(dist);
+                    return dto;
+                })
+                .filter(dto -> dto.getDistanceKm() <= maxRadius)
+                .sorted(Comparator.comparingDouble(PickupDto::getDistanceKm))
+                .collect(Collectors.toList());
     }
 
     /** Accept a pickup: REQUESTED → ACCEPTED */
@@ -76,6 +153,31 @@ public class CollectorOperationsService {
 
         notificationService.sendNotification(pickup.getUser(), "Pickup Accepted",
                 "Your pickup has been accepted by a collector.", "PICKUP_ACCEPTED");
+
+        return pickupService.mapToDto(saved);
+    }
+
+    /** Reject / Unassign pickup */
+    @Transactional
+    public PickupDto rejectPickup(Long pickupId, String reason) {
+        Collector collector = getCurrentCollector();
+        Pickup pickup = getAndVerifyAssigned(pickupId, collector);
+
+        if (pickup.getStatus() != Pickup.Status.ACCEPTED && pickup.getStatus() != Pickup.Status.REQUESTED) {
+            throw new InvalidTransactionException("Cannot reject pickup currently in status: " + pickup.getStatus());
+        }
+
+        String oldStatus = pickup.getStatus().name();
+        pickup.setAssignedCollector(null);
+        pickup.setStatus(Pickup.Status.REQUESTED);
+        Pickup saved = pickupRepository.save(pickup);
+
+        User collectorUser = SecurityUtils.getCurrentUser();
+        String remarks = (reason != null && !reason.isBlank()) ? "Rejected by collector: " + reason : "Rejected/released by collector";
+        statusRepository.save(new PickupStatusHistory(saved, oldStatus, "REQUESTED", collectorUser, remarks));
+
+        notificationService.sendNotification(pickup.getUser(), "Pickup Unassigned",
+                "Your pickup has been made available to other collectors.", "PICKUP_REOPENED");
 
         return pickupService.mapToDto(saved);
     }
@@ -119,6 +221,22 @@ public class CollectorOperationsService {
                 "WASTE_COLLECTED");
 
         return pickupService.mapToDto(saved);
+    }
+
+    /** General status update with validation */
+    @Transactional
+    public PickupDto updateStatus(Long pickupId, String statusName) {
+        if (statusName == null || statusName.isBlank()) {
+            throw new InvalidTransactionException("Target status name is required.");
+        }
+        String upper = statusName.trim().toUpperCase();
+        if (upper.equals("ON_THE_WAY")) {
+            return markOnTheWay(pickupId);
+        } else if (upper.equals("COLLECTED")) {
+            return markCollected(pickupId);
+        } else {
+            throw new InvalidTransactionException("Status update via this endpoint supports ON_THE_WAY or COLLECTED. Provided: " + statusName);
+        }
     }
 
     // -------- helpers --------
