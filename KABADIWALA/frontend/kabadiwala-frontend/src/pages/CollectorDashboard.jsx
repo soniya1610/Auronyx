@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   Package, CheckCircle, Clock, MapPin, ArrowRight, Navigation, TrendingUp, Wallet
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { pickupService } from '../../services/pickupService';
-import Loader from '../common/Loader';
+import { useAuth } from '../context/AuthContext';
+import { pickupService } from '../services/pickupService';
+import Loader from '../components/common/Loader';
 
 const STATUS_CONFIG = {
   REQUESTED:  { label: 'Requested',  badgeClass: 'badge-amber',  color: 'var(--amber-400)' },

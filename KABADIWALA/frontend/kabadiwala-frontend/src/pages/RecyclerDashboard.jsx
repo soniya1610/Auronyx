@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Recycle, CheckCircle, Clock, ArrowRight, Leaf } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { recyclingService } from '../../services/recyclingService';
-import Loader from '../common/Loader';
+import { useAuth } from '../context/AuthContext';
+import { recyclingService } from '../services/recyclingService';
+import Loader from '../components/common/Loader';
 
 const RECYCLING_STATUSES = [
   'COLLECTED', 'SORTED', 'AGGREGATED', 'TRANSPORT', 'RECEIVED', 'PROCESSING', 'RECYCLED'

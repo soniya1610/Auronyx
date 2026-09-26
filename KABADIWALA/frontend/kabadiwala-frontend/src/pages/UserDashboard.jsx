@@ -4,11 +4,11 @@ import {
   Package, Wallet, Recycle, Trophy, ArrowRight, Plus, Camera,
   TrendingUp, Clock, CheckCircle, AlertCircle, Leaf, Star
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useUser } from '../../context/UserContext';
-import { pickupService } from '../../services/pickupService';
-import { paymentService } from '../../services/paymentService';
-import Loader from '../common/Loader';
+import { useAuth } from '../context/AuthContext';
+import { useUser } from '../context/UserContext';
+import { pickupService } from '../services/pickupService';
+import { paymentService } from '../services/paymentService';
+import Loader from '../components/common/Loader';
 
 const STATUS_CONFIG = {
   REQUESTED:    { label: 'Requested', color: 'var(--amber-400)', bg: 'rgba(251,191,36,0.1)', badgeClass: 'badge-amber' },
