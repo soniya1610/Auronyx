@@ -44,6 +44,9 @@ class Module1And3VerificationTest {
     private PickupRepository pickupRepository;
     private TransactionRepository transactionRepository;
     private RecyclingRecordRepository recyclingRecordRepository;
+    private ReferralRepository referralRepository;
+    private BadgeRepository badgeRepository;
+    private ChallengeRepository challengeRepository;
 
     private PasswordEncoder passwordEncoder;
     private JwtService jwtService;
@@ -75,6 +78,9 @@ class Module1And3VerificationTest {
         pickupRepository = mock(PickupRepository.class);
         transactionRepository = mock(TransactionRepository.class);
         recyclingRecordRepository = mock(RecyclingRecordRepository.class);
+        referralRepository = mock(ReferralRepository.class);
+        badgeRepository = mock(BadgeRepository.class);
+        challengeRepository = mock(ChallengeRepository.class);
 
         passwordEncoder = mock(PasswordEncoder.class);
         jwtService = mock(JwtService.class);
@@ -93,10 +99,11 @@ class Module1And3VerificationTest {
 
         notificationService = new NotificationService(notificationRepository);
         pointService = new PointService(pointLedgerRepository);
-        gamificationService = new GamificationService(pointLedgerRepository);
+        gamificationService = new GamificationService(pointLedgerRepository, badgeRepository, challengeRepository, pickupRepository);
         rewardService = new RewardService(rewardRepository);
-        fraudDetectionService = new FraudDetectionService(fraudAlertRepository, pickupRepository);
-        analyticsService = new AnalyticsService(pickupRepository, transactionRepository, recyclingRecordRepository, collectorRepository);
+        fraudDetectionService = new FraudDetectionService(fraudAlertRepository, pickupRepository, redemptionRepository);
+        analyticsService = new AnalyticsService(pickupRepository, transactionRepository, recyclingRecordRepository, collectorRepository,
+                pointLedgerRepository, redemptionRepository, fraudAlertRepository, referralRepository);
     }
 
     @AfterEach

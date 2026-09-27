@@ -16,6 +16,8 @@ import com.kabadiwala.repository.UserRepository;
 import com.kabadiwala.repository.WalletRepository;
 import com.kabadiwala.security.CustomUserDetails;
 import com.kabadiwala.security.JwtService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +40,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+
+    @Autowired @Lazy
+    private ReferralService referralService;
 
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
@@ -105,6 +110,11 @@ public class AuthService {
         wallet.setBalance(BigDecimal.ZERO);
         wallet.setCurrency("INR");
         walletRepository.save(wallet);
+
+        // Module 3: Apply referral code if provided (bonus points to both users)
+        if (referralService != null && request.getReferralCode() != null) {
+            referralService.applyReferralCode(savedUser, request.getReferralCode());
+        }
 
         CustomUserDetails userDetails = new CustomUserDetails(savedUser);
         String token = jwtService.generateToken(userDetails);

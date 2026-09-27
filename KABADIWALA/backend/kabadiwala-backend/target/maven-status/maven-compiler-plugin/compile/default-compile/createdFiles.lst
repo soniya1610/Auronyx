@@ -9,6 +9,7 @@ com\kabadiwala\entity\WalletTransaction.class
 com\kabadiwala\security\JwtService.class
 com\kabadiwala\dto\PickupDto.class
 com\kabadiwala\service\PointService.class
+com\kabadiwala\controller\ReferralController.class
 com\kabadiwala\entity\Payment$Method.class
 com\kabadiwala\controller\NotificationController.class
 com\kabadiwala\controller\AdminController.class
@@ -25,6 +26,7 @@ com\kabadiwala\config\OpenApiConfig.class
 com\kabadiwala\service\RewardService.class
 com\kabadiwala\dto\QRVerificationRequest.class
 com\kabadiwala\dto\WalletDto.class
+com\kabadiwala\service\ReferralService.class
 com\kabadiwala\entity\User.class
 com\kabadiwala\repository\TraceabilityRepository.class
 com\kabadiwala\entity\Redemption.class
@@ -49,7 +51,9 @@ com\kabadiwala\controller\AuthController.class
 com\kabadiwala\entity\Payment.class
 com\kabadiwala\entity\TraceabilityRecord.class
 com\kabadiwala\repository\WasteVerificationRepository.class
+com\kabadiwala\service\payment\PaymentResult.class
 com\kabadiwala\config\CorsConfig.class
+com\kabadiwala\dto\RecyclingTimelineDto$TimelineStage.class
 com\kabadiwala\entity\RecyclingRecord$Status.class
 com\kabadiwala\controller\FraudController.class
 com\kabadiwala\entity\Reward.class
@@ -96,6 +100,7 @@ com\kabadiwala\service\WalletService.class
 com\kabadiwala\service\PricingService.class
 com\kabadiwala\repository\PaymentRepository.class
 com\kabadiwala\service\FraudDetectionService.class
+com\kabadiwala\repository\BadgeRepository.class
 com\kabadiwala\config\WebConfig.class
 com\kabadiwala\dto\ApiResponse.class
 com\kabadiwala\entity\WasteVerification.class
@@ -112,8 +117,10 @@ com\kabadiwala\service\AnalyticsService.class
 com\kabadiwala\service\AuthService.class
 com\kabadiwala\repository\EPRRecordRepository.class
 com\kabadiwala\dto\WeightVerificationRequest.class
+com\kabadiwala\dto\RecyclingTimelineDto.class
 com\kabadiwala\dto\WasteCategoryDto.class
 com\kabadiwala\entity\Role.class
+com\kabadiwala\entity\Referral.class
 com\kabadiwala\repository\CollectorRepository.class
 com\kabadiwala\service\RecyclingService$1.class
 com\kabadiwala\entity\Challenge$ChallengeStatus.class
@@ -126,6 +133,7 @@ com\kabadiwala\dto\RecyclingUpdateRequest.class
 com\kabadiwala\dto\PriceCalculationResponse.class
 com\kabadiwala\service\WasteService.class
 com\kabadiwala\controller\WalletController.class
+com\kabadiwala\service\payment\MockPaymentProvider.class
 com\kabadiwala\entity\Pickup$Status.class
 com\kabadiwala\service\NotificationService.class
 com\kabadiwala\repository\FraudAlertRepository.class
@@ -133,8 +141,12 @@ com\kabadiwala\dto\QRResponseDto.class
 com\kabadiwala\repository\WalletTransactionRepository.class
 com\kabadiwala\service\PickupService.class
 com\kabadiwala\service\CollectorOperationsService.class
+com\kabadiwala\repository\ChallengeRepository.class
 com\kabadiwala\repository\PickupRepository.class
+com\kabadiwala\service\payment\PaymentProvider.class
+com\kabadiwala\dto\ReceiptDto.class
 com\kabadiwala\dto\RedemptionRequest.class
+com\kabadiwala\dto\PaymentDto.class
 com\kabadiwala\service\CollectorService.class
 com\kabadiwala\service\RecyclerService.class
 com\kabadiwala\controller\PaymentController.class
@@ -146,5 +158,6 @@ com\kabadiwala\dto\AIHealthResponse.class
 com\kabadiwala\dto\LoginRequest.class
 com\kabadiwala\repository\TraceabilityRecordRepository.class
 com\kabadiwala\exception\UnauthorizedException.class
+com\kabadiwala\repository\ReferralRepository.class
 com\kabadiwala\controller\EPRController.class
 com\kabadiwala\controller\AIController.class

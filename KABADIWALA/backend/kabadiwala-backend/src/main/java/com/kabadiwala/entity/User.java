@@ -36,6 +36,9 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @Column(name = "referral_code", unique = true, length = 20)
+    private String referralCode;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -110,6 +113,14 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public String getReferralCode() {
+        return referralCode;
+    }
+
+    public void setReferralCode(String referralCode) {
+        this.referralCode = referralCode;
     }
 
     public LocalDateTime getCreatedAt() {

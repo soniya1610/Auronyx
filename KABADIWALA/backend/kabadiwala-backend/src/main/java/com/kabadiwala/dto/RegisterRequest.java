@@ -21,6 +21,8 @@ public class RegisterRequest {
 
     private String role; // e.g. "USER", "COLLECTOR", "RECYCLER"
 
+    private String referralCode; // optional — applied on registration for bonus points
+
     public RegisterRequest() {}
 
     public RegisterRequest(String name, String email, String phone, String password, String role) {
@@ -69,5 +71,13 @@ public class RegisterRequest {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getReferralCode() {
+        return referralCode;
+    }
+
+    public void setReferralCode(String referralCode) {
+        this.referralCode = referralCode;
     }
 }

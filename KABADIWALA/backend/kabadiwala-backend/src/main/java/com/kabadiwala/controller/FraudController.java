@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * FraudController — Module 2.
+ * FraudController — Modules 2 & 3.
  * Dedicated fraud management REST endpoints (admin-facing).
  */
 @RestController
@@ -36,11 +36,25 @@ public class FraudController {
                 fraudDetectionService.getOpenAlerts()));
     }
 
+    @GetMapping("/alerts/user/{userId}")
+    public ResponseEntity<ApiResponse<List<FraudAlert>>> getAlertsByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success("User fraud alerts retrieved",
+                fraudDetectionService.getAlertsByUser(userId)));
+    }
+
     @PutMapping("/alerts/{id}/resolve")
     public ResponseEntity<ApiResponse<FraudAlert>> resolveAlert(
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "Manually resolved") String notes) {
         FraudAlert resolved = fraudDetectionService.resolveAlert(id, notes);
         return ResponseEntity.ok(ApiResponse.success("Fraud alert resolved", resolved));
+    }
+
+    @PutMapping("/alerts/{id}/false-positive")
+    public ResponseEntity<ApiResponse<FraudAlert>> markFalsePositive(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "False positive") String notes) {
+        FraudAlert updated = fraudDetectionService.markFalsePositive(id, notes);
+        return ResponseEntity.ok(ApiResponse.success("Fraud alert marked as false positive", updated));
     }
 }
