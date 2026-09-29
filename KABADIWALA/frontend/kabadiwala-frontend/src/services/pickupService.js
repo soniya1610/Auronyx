@@ -1,75 +1,33 @@
-import api from './api';
+import api from './api'
 
 export const pickupService = {
-  createPickup: async (data) => {
-    const res = await api.post('/api/pickups', data);
-    return res.data.data;
+  async bookPickup(data) {
+    const res = await api.post('/pickups/book', data)
+    return res.data
   },
-
-  getMyPickups: async () => {
-    const res = await api.get('/api/pickups');
-    return res.data.data;
+  async getMyPickups() {
+    const res = await api.get('/pickups/my-pickups')
+    return res.data
   },
-
-  getPickupById: async (id) => {
-    const res = await api.get(`/api/pickups/${id}`);
-    return res.data.data;
+  async getPickup(id) {
+    const res = await api.get(`/pickups/${id}`)
+    return res.data
   },
-
-  updatePickup: async (id, data) => {
-    const res = await api.put(`/api/pickups/${id}`, data);
-    return res.data.data;
+  // Collector
+  async getCollectorPickups() {
+    const res = await api.get('/collector/pickups')
+    return res.data
   },
-
-  cancelPickup: async (id) => {
-    const res = await api.put(`/api/pickups/${id}/cancel`);
-    return res.data.data;
+  async acceptPickup(id) {
+    const res = await api.put(`/collector/pickups/${id}/accept`)
+    return res.data
   },
-
-  getPickupStatus: async (id) => {
-    const res = await api.get(`/api/pickups/${id}/status`);
-    return res.data.data;
+  async verifyWeight(id, actualWeightKg) {
+    const res = await api.put(`/collector/pickups/${id}/verify-weight`, { actualWeightKg })
+    return res.data
   },
-
-  // Collector endpoints
-  getNearbyPickups: async () => {
-    const res = await api.get('/api/collector/pickups/nearby');
-    return res.data.data;
+  async completePickup(id, paymentMethod = 'WALLET') {
+    const res = await api.put(`/collector/pickups/${id}/complete`, { paymentMethod })
+    return res.data
   },
-
-  getCollectorPickups: async () => {
-    const res = await api.get('/api/collector/pickups');
-    return res.data.data;
-  },
-
-  acceptPickup: async (id) => {
-    const res = await api.post(`/api/collector/pickups/${id}/accept`);
-    return res.data.data;
-  },
-
-  rejectPickup: async (id) => {
-    const res = await api.post(`/api/collector/pickups/${id}/reject`);
-    return res.data.data;
-  },
-
-  updatePickupStatus: async (id, status) => {
-    const res = await api.put(`/api/collector/pickups/${id}/status`, { status });
-    return res.data.data;
-  },
-
-  // Verification
-  getVerification: async (pickupId) => {
-    const res = await api.get(`/api/collector/pickups/${pickupId}/verification`);
-    return res.data.data;
-  },
-
-  submitVerification: async (pickupId, data) => {
-    const res = await api.post(`/api/collector/pickups/${pickupId}/verification`, data);
-    return res.data.data;
-  },
-
-  updateVerification: async (pickupId, data) => {
-    const res = await api.put(`/api/collector/pickups/${pickupId}/verification`, data);
-    return res.data.data;
-  },
-};
+}

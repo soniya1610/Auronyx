@@ -1,144 +1,105 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Leaf, ArrowRight, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [showPwd, setShowPwd] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault()
+    if (!form.email || !form.password) { setError('Please fill all fields'); return }
+    setLoading(true)
+    setError('')
     try {
-      const data = await login(form);
-      const role = data.user?.role;
-      if (role === 'COLLECTOR') navigate('/collector');
-      else if (role === 'RECYCLER') navigate('/recycler');
-      else if (role === 'ADMIN') navigate('/admin');
-      else navigate('/dashboard');
+      await login(form.email, form.password)
+      navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+      setError(err.response?.data?.message || 'Login failed. Check your credentials.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-base)', padding: '1.5rem', position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Background orbs */}
-      <div className="glow-orb glow-green" style={{ width: '500px', height: '500px', top: '-200px', right: '-200px' }} />
-      <div className="glow-orb glow-teal" style={{ width: '400px', height: '400px', bottom: '-200px', left: '-200px' }} />
-
-      <div style={{ width: '100%', maxWidth: '420px', animation: 'slideUp 0.4s ease forwards' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '3.5rem', height: '3.5rem',
-            background: 'linear-gradient(135deg, #22c55e 0%, #14b8a6 100%)',
-            borderRadius: '16px', margin: '0 auto 1rem',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 24px rgba(34,197,94,0.3)',
-          }}>
-            <Leaf size={22} color="#fff" />
-          </div>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Welcome back</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Sign in to your Kabadiwala account</p>
+    <div className="auth-page">
+      <div className="auth-card fade-in">
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: '2.5rem' }}>♻️</span>
         </div>
+        <h1 className="auth-title">Welcome Back</h1>
+        <p className="auth-subtitle">Sign in to Kabadiwala Connect</p>
 
-        {/* Card */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)', padding: '2rem',
-          boxShadow: 'var(--shadow-lg)',
-        }}>
-          {error && (
-            <div className="alert alert-error" style={{ marginBottom: '1.25rem' }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span>{error}</span>
-            </div>
-          )}
+        {error && <div className="alert alert-error">{error}</div>}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="login-email">
-                <Mail size={14} style={{ display: 'inline', marginRight: '0.375rem' }} />
-                Email
-              </label>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-dim)' }} />
               <input
-                id="login-email"
                 type="email"
+                name="email"
                 className="form-input"
                 placeholder="you@example.com"
                 value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                required
-                autoFocus
+                onChange={handleChange}
+                style={{ paddingLeft: '2.5rem' }}
+                autoComplete="email"
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="login-password">
-                <Lock size={14} style={{ display: 'inline', marginRight: '0.375rem' }} />
-                Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  id="login-password"
-                  type={showPw ? 'text' : 'password'}
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  required
-                  style={{ paddingRight: '2.75rem' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  style={{
-                    position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
-                    display: 'flex', alignItems: 'center',
-                  }}
-                >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg w-full"
-              disabled={loading}
-              style={{ marginTop: '0.375rem' }}
-            >
-              {loading ? (
-                <><div className="spinner" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }} /> Signing in...</>
-              ) : (
-                <>Sign In <ArrowRight size={17} /></>
-              )}
-            </button>
-          </form>
-
-          <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            Don't have an account?{' '}
-            <Link to="/register" style={{ color: 'var(--green-400)', fontWeight: 600 }}>Create one</Link>
           </div>
+
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-dim)' }} />
+              <input
+                type={showPwd ? 'text' : 'password'}
+                name="password"
+                className="form-input"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)' }}
+              >
+                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading} style={{ marginTop: '0.5rem' }}>
+            {loading ? <><div className="spinner" style={{ width: 18, height: 18 }}></div> Signing in...</> : <><LogIn size={18} /> Sign In</>}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <p className="text-muted text-sm">
+            Don't have an account?{' '}
+            <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Create one</Link>
+          </p>
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-          <Link to="/" style={{ color: 'var(--text-muted)' }}>← Back to home</Link>
-        </p>
+        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(16,185,129,0.06)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16,185,129,0.15)' }}>
+          <p className="text-xs text-muted" style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Demo Accounts:</p>
+          <p className="text-xs text-muted">👤 user@kabadiwala.com / password123</p>
+          <p className="text-xs text-muted">🚛 collector@kabadiwala.com / password123</p>
+          <p className="text-xs text-muted">🔧 admin@kabadiwala.com / password123</p>
+        </div>
       </div>
     </div>
-  );
+  )
 }

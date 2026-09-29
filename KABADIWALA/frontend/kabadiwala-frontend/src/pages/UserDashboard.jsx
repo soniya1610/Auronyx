@@ -1,254 +1,256 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
+import Navbar from '../components/common/Navbar'
+import Footer from '../components/common/Footer'
+import Modal from '../components/common/Modal'
+import { pickupService } from '../services/pickupService'
+import { paymentService } from '../services/paymentService'
+import { rewardService } from '../services/rewardService'
 import {
-  Package, Wallet, Recycle, Trophy, ArrowRight, Plus, Camera,
-  TrendingUp, Clock, CheckCircle, AlertCircle, Leaf, Star
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useUser } from '../context/UserContext';
-import { pickupService } from '../services/pickupService';
-import { paymentService } from '../services/paymentService';
-import Loader from '../components/common/Loader';
+  Package, Truck, Wallet, Award, Plus, MapPin, Clock,
+  CheckCircle, XCircle, RefreshCw, Calendar, Weight, IndianRupee
+} from 'lucide-react'
 
-const STATUS_CONFIG = {
-  REQUESTED:    { label: 'Requested', color: 'var(--amber-400)', bg: 'rgba(251,191,36,0.1)', badgeClass: 'badge-amber' },
-  ACCEPTED:     { label: 'Accepted', color: 'var(--blue-400)',  bg: 'rgba(59,130,246,0.1)',  badgeClass: 'badge-blue' },
-  ON_THE_WAY:   { label: 'On the Way', color: 'var(--purple-400)', bg: 'rgba(168,85,247,0.1)', badgeClass: 'badge-purple' },
-  COLLECTED:    { label: 'Collected', color: 'var(--teal-400)', bg: 'rgba(20,184,166,0.1)',  badgeClass: 'badge-teal' },
-  COMPLETED:    { label: 'Completed', color: 'var(--green-400)', bg: 'rgba(34,197,94,0.1)',  badgeClass: 'badge-green' },
-  CANCELLED:    { label: 'Cancelled', color: 'var(--red-400)',  bg: 'rgba(239,68,68,0.1)',   badgeClass: 'badge-red' },
-};
+function StatCard({ icon, label, value, color = 'var(--primary)' }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-icon" style={{ background: `${color}20`, color }}>{icon}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-label">{label}</div>
+    </div>
+  )
+}
+
+function statusBadge(status) {
+  const map = {
+    REQUESTED: 'badge-yellow', ASSIGNED: 'badge-blue', IN_TRANSIT: 'badge-blue',
+    WEIGHED: 'badge-blue', COMPLETED: 'badge-green', PAID: 'badge-green', CANCELLED: 'badge-red',
+  }
+  return <span className={`badge ${map[status] || 'badge-gray'}`}>{status}</span>
+}
 
 export default function UserDashboard() {
-  const { user } = useAuth();
-  const { wallet, fetchWallet } = useUser();
-  const [pickups, setPickups] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth()
+  const [pickups, setPickups] = useState([])
+  const [balance, setBalance] = useState(0)
+  const [rewards, setRewards] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showBooking, setShowBooking] = useState(false)
+  const [bookingForm, setBookingForm] = useState({
+    wasteType: 'Paper', estimatedWeightKg: '', address: '', scheduledDate: '', notes: ''
+  })
+  const [bookingLoading, setBookingLoading] = useState(false)
+  const [bookingMsg, setBookingMsg] = useState({ type: '', text: '' })
+  const [activeTab, setActiveTab] = useState('overview')
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        await fetchWallet();
-        const [p, t] = await Promise.all([
-          pickupService.getMyPickups(),
-          paymentService.getMyTransactions(),
-        ]);
-        setPickups(p || []);
-        setTransactions(t || []);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    };
-    load();
-  }, [fetchWallet]);
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const [pRes, wRes] = await Promise.allSettled([
+        pickupService.getMyPickups(),
+        paymentService.getBalance(),
+      ])
+      if (pRes.status === 'fulfilled') setPickups(pRes.value.data || [])
+      if (wRes.status === 'fulfilled') setBalance(wRes.value.data?.balance ?? 0)
+    } catch {}
+    setLoading(false)
+  }
 
-  if (loading) return <Loader text="Loading your dashboard..." />;
+  useEffect(() => { loadData() }, [])
 
-  const activePickups = pickups.filter(p => !['COMPLETED', 'CANCELLED'].includes(p.status));
-  const completedPickups = pickups.filter(p => p.status === 'COMPLETED');
+  const handleBookPickup = async (e) => {
+    e.preventDefault()
+    if (!bookingForm.address || !bookingForm.estimatedWeightKg) {
+      setBookingMsg({ type: 'error', text: 'Please fill address and weight' }); return
+    }
+    setBookingLoading(true)
+    setBookingMsg({ type: '', text: '' })
+    try {
+      await pickupService.bookPickup({
+        wasteType: bookingForm.wasteType,
+        estimatedWeightKg: parseFloat(bookingForm.estimatedWeightKg),
+        address: bookingForm.address,
+        scheduledDate: bookingForm.scheduledDate || null,
+        notes: bookingForm.notes,
+      })
+      setBookingMsg({ type: 'success', text: 'Pickup booked successfully!' })
+      setBookingForm({ wasteType: 'Paper', estimatedWeightKg: '', address: '', scheduledDate: '', notes: '' })
+      setTimeout(() => { setShowBooking(false); loadData() }, 1200)
+    } catch (err) {
+      setBookingMsg({ type: 'error', text: err.response?.data?.message || 'Failed to book pickup' })
+    } finally {
+      setBookingLoading(false)
+    }
+  }
+
+  const completedPickups = pickups.filter(p => p.status === 'COMPLETED' || p.status === 'PAID').length
+  const pendingPickups = pickups.filter(p => ['REQUESTED', 'ASSIGNED', 'IN_TRANSIT', 'WEIGHED'].includes(p.status)).length
 
   return (
-    <div className="page-wrapper" style={{ padding: 'calc(var(--nav-height) + 2rem) 0 3rem' }}>
-      <div className="container">
-
-        {/* Welcome */}
-        <div style={{ marginBottom: '2rem', animation: 'fadeIn 0.4s ease forwards' }}>
-          <h1 style={{ fontSize: '1.75rem' }}>
-            Good day, <span className="gradient-text">{user?.name?.split(' ')[0]}!</span> 👋
-          </h1>
-          <p className="text-muted text-sm" style={{ marginTop: '0.25rem' }}>Here's your waste management overview</p>
+    <div className="page-wrapper">
+      <Navbar />
+      <div className="main-content">
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 className="page-title">Welcome, {user?.name || 'User'} 👋</h1>
+            <p className="page-subtitle">Your waste management dashboard</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowBooking(true)}>
+            <Plus size={18} /> Book Pickup
+          </button>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid-4" style={{ marginBottom: '2rem', animation: 'slideUp 0.5s ease forwards' }}>
-          {[
-            {
-              label: 'Wallet Balance', value: `₹${parseFloat(wallet?.balance || 0).toFixed(2)}`,
-              icon: Wallet, color: '#22c55e', bg: 'rgba(34,197,94,0.1)', to: '/wallet'
-            },
-            {
-              label: 'Active Pickups', value: activePickups.length,
-              icon: Package, color: '#f59e0b', bg: 'rgba(251,191,36,0.1)', to: '/pickups'
-            },
-            {
-              label: 'Total Completed', value: completedPickups.length,
-              icon: CheckCircle, color: '#14b8a6', bg: 'rgba(20,184,166,0.1)', to: '/pickups'
-            },
-            {
-              label: 'Total Earned', value: `₹${transactions.filter(t => t.status === 'COMPLETED').reduce((sum, t) => sum + parseFloat(t.finalAmount || 0), 0).toFixed(0)}`,
-              icon: TrendingUp, color: '#a855f7', bg: 'rgba(168,85,247,0.1)', to: '/wallet'
-            },
-          ].map(({ label, value, icon: Icon, color, bg, to }) => (
-            <Link key={label} to={to} style={{ textDecoration: 'none' }}>
-              <div className="stat-card" style={{ cursor: 'pointer' }}>
-                <div className="stat-icon" style={{ background: bg }}>
-                  <Icon size={20} style={{ color }} />
-                </div>
-                <div className="stat-number" style={{ color }}>{value}</div>
-                <div className="stat-label">{label}</div>
-              </div>
-            </Link>
+        {/* Stats */}
+        <div className="grid-4 mb-4">
+          <StatCard icon={<Package size={22} />} label="Total Pickups" value={pickups.length} />
+          <StatCard icon={<CheckCircle size={22} />} label="Completed" value={completedPickups} color="#10b981" />
+          <StatCard icon={<Clock size={22} />} label="Pending" value={pendingPickups} color="#f59e0b" />
+          <StatCard icon={<Wallet size={22} />} label="Wallet Balance" value={`₹${balance}`} color="#3b82f6" />
+        </div>
+
+        {/* Tabs */}
+        <div className="tabs">
+          {['overview', 'pickups', 'rewards'].map(t => (
+            <button key={t} className={`tab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="card" style={{ marginBottom: '2rem', animation: 'slideUp 0.6s ease forwards' }}>
-          <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', fontWeight: 700 }}>Quick Actions</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
-            {[
-              { to: '/waste/analyze', icon: Camera, label: 'Analyze Waste', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-              { to: '/pickups/new', icon: Plus, label: 'Schedule Pickup', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-              { to: '/wallet', icon: Wallet, label: 'View Wallet', color: '#f59e0b', bg: 'rgba(251,191,36,0.1)' },
-              { to: '/recycling', icon: Recycle, label: 'Track Recycling', color: '#14b8a6', bg: 'rgba(20,184,166,0.1)' },
-              { to: '/rewards', icon: Trophy, label: 'Earn Rewards', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
-              { to: '/qr', icon: Star, label: 'Scan QR', color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
-            ].map(({ to, icon: Icon, label, color, bg }) => (
-              <Link key={label} to={to} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: '0.625rem', padding: '1.25rem 0.75rem',
-                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  transition: 'all var(--transition-base)',
-                  textAlign: 'center',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.background = bg; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.transform = ''; }}
-                >
-                  <div style={{ width: '2.5rem', height: '2.5rem', background: bg, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={18} style={{ color }} />
-                  </div>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Pickups */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', animation: 'slideUp 0.7s ease forwards' }}>
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Recent Pickups</h3>
-              <Link to="/pickups" className="btn btn-ghost btn-sm" style={{ fontSize: '0.8rem' }}>
-                View All <ArrowRight size={13} />
-              </Link>
-            </div>
-
-            {pickups.length === 0 ? (
-              <div className="empty-state" style={{ padding: '2rem' }}>
-                <div className="empty-state-icon" style={{ width: '3rem', height: '3rem' }}>
-                  <Package size={20} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <p className="text-sm text-muted">No pickups yet</p>
-                <Link to="/pickups/new" className="btn btn-primary btn-sm">Schedule First Pickup</Link>
+        {activeTab === 'overview' && (
+          <div className="fade-in">
+            <h3 className="section-title">Recent Pickups</h3>
+            {loading ? (
+              <div className="loading-overlay"><div className="spinner"></div><span>Loading...</span></div>
+            ) : pickups.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📦</div>
+                <div className="empty-state-title">No pickups yet</div>
+                <p className="text-muted text-sm">Book your first pickup to start recycling!</p>
+                <button className="btn btn-primary mt-2" onClick={() => setShowBooking(true)}>
+                  <Plus size={16} /> Book First Pickup
+                </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {pickups.slice(0, 4).map(pickup => {
-                  const cfg = STATUS_CONFIG[pickup.status] || STATUS_CONFIG.REQUESTED;
-                  return (
-                    <Link key={pickup.id} to={`/pickups/${pickup.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0.75rem', background: 'var(--bg-surface)',
-                        border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                        transition: 'all var(--transition-fast)',
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: '2rem', height: '2rem', background: cfg.bg, borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Package size={14} style={{ color: cfg.color }} />
-                          </div>
-                          <div>
-                            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                              {pickup.wasteCategoryName || 'Waste'}
-                            </p>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                              {pickup.scheduledDate || 'Scheduled'}
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`badge ${cfg.badgeClass}`}>{cfg.label}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Waste Type</th>
+                      <th>Weight (kg)</th>
+                      <th>Address</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pickups.slice(0, 10).map(p => (
+                      <tr key={p.id}>
+                        <td className="text-muted">#{p.id}</td>
+                        <td>{p.wasteType}</td>
+                        <td>{p.estimatedWeightKg || '-'} kg</td>
+                        <td className="text-muted" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.address}</td>
+                        <td>{statusBadge(p.status)}</td>
+                        <td className="text-muted text-sm">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
+        )}
 
-          {/* Recent Transactions */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Transactions</h3>
-              <Link to="/wallet" className="btn btn-ghost btn-sm" style={{ fontSize: '0.8rem' }}>
-                View All <ArrowRight size={13} />
-              </Link>
+        {activeTab === 'pickups' && (
+          <div className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 className="section-title" style={{ margin: 0 }}>All Pickups</h3>
+              <button className="btn btn-ghost btn-sm" onClick={loadData}><RefreshCw size={14} /> Refresh</button>
             </div>
-
-            {transactions.length === 0 ? (
-              <div className="empty-state" style={{ padding: '2rem' }}>
-                <div className="empty-state-icon" style={{ width: '3rem', height: '3rem' }}>
-                  <Wallet size={20} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <p className="text-sm text-muted">No transactions yet</p>
+            {pickups.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">🚛</div>
+                <div className="empty-state-title">No pickups found</div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {transactions.slice(0, 4).map(tx => (
-                  <div key={tx.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0.75rem', background: 'var(--bg-surface)',
-                    border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '2rem', height: '2rem', background: 'rgba(34,197,94,0.1)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <TrendingUp size={14} color="var(--green-400)" />
-                      </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {pickups.map(p => (
+                  <div className="card" key={p.id}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div>
-                        <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                          {tx.wasteCategoryName || 'Waste Sold'}
-                        </p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                          {tx.actualWeight ? `${tx.actualWeight} kg` : ''} · {tx.status}
-                        </p>
+                        <span className="font-semibold">{p.wasteType}</span>
+                        <span className="text-muted text-sm" style={{ marginLeft: 8 }}>#{p.id}</span>
                       </div>
+                      {statusBadge(p.status)}
                     </div>
-                    <span style={{ fontWeight: 800, color: 'var(--green-400)', fontFamily: "'Poppins',sans-serif" }}>
-                      +₹{parseFloat(tx.finalAmount || 0).toFixed(2)}
-                    </span>
+                    <div className="flex gap-2 mt-1 text-sm text-muted" style={{ flexWrap: 'wrap' }}>
+                      <span><Weight size={13} style={{ verticalAlign: 'middle' }} /> {p.estimatedWeightKg || '?'} kg</span>
+                      <span><MapPin size={13} style={{ verticalAlign: 'middle' }} /> {p.address || 'N/A'}</span>
+                      {p.scheduledDate && <span><Calendar size={13} style={{ verticalAlign: 'middle' }} /> {new Date(p.scheduledDate).toLocaleDateString()}</span>}
+                      {p.totalAmount > 0 && <span><IndianRupee size={13} style={{ verticalAlign: 'middle' }} /> ₹{p.totalAmount}</span>}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Eco Impact */}
-        <div className="card" style={{ marginTop: '1.5rem', animation: 'slideUp 0.8s ease forwards' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
-            <div style={{ width: '2.5rem', height: '2.5rem', background: 'rgba(34,197,94,0.1)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Leaf size={18} color="var(--green-400)" />
+        {activeTab === 'rewards' && (
+          <div className="fade-in">
+            <div className="empty-state">
+              <div className="empty-state-icon">🎁</div>
+              <div className="empty-state-title">Rewards Coming Soon</div>
+              <p className="text-muted text-sm">Keep recycling to earn green points!</p>
             </div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Your Eco Impact</h3>
           </div>
-          <div className="grid-3">
-            {[
-              { label: 'CO₂ Saved', value: `${(completedPickups.length * 2.3).toFixed(1)} kg` },
-              { label: 'Trees Equivalent', value: `${(completedPickups.length * 0.1).toFixed(1)}` },
-              { label: 'Pickups Completed', value: completedPickups.length },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--green-400)', fontFamily: "'Poppins',sans-serif", marginBottom: '0.25rem' }}>{value}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Book Pickup Modal */}
+      <Modal isOpen={showBooking} onClose={() => setShowBooking(false)} title="Book a Pickup">
+        {bookingMsg.text && <div className={`alert alert-${bookingMsg.type}`}>{bookingMsg.text}</div>}
+        <form onSubmit={handleBookPickup}>
+          <div className="form-group">
+            <label className="form-label">Waste Type</label>
+            <select className="form-input" value={bookingForm.wasteType}
+              onChange={e => setBookingForm({ ...bookingForm, wasteType: e.target.value })}>
+              {['Paper', 'Plastic', 'Metal', 'Glass', 'E-Waste', 'Fabric', 'Organic', 'Mixed'].map(t =>
+                <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Estimated Weight (kg) *</label>
+            <input type="number" step="0.1" className="form-input" placeholder="e.g. 5"
+              value={bookingForm.estimatedWeightKg}
+              onChange={e => setBookingForm({ ...bookingForm, estimatedWeightKg: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Pickup Address *</label>
+            <textarea className="form-input" placeholder="Full address for pickup"
+              value={bookingForm.address}
+              onChange={e => setBookingForm({ ...bookingForm, address: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Preferred Date</label>
+            <input type="date" className="form-input"
+              value={bookingForm.scheduledDate}
+              onChange={e => setBookingForm({ ...bookingForm, scheduledDate: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Notes (optional)</label>
+            <input type="text" className="form-input" placeholder="Any special instructions"
+              value={bookingForm.notes}
+              onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" disabled={bookingLoading}>
+            {bookingLoading ? 'Booking...' : 'Confirm Pickup'}
+          </button>
+        </form>
+      </Modal>
+
+      <Footer />
     </div>
-  );
+  )
 }

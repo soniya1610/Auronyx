@@ -1,18 +1,12 @@
-import api from './api';
+import api from './api'
 
 export const qrService = {
-  generateQR: async (transactionId) => {
-    const res = await api.post(`/api/qr/generate/${transactionId}`);
-    return res.data.data;
+  async generateQR(data) {
+    const res = await api.post('/qr/generate', data)
+    return res.data
   },
-
-  getQRByTransaction: async (transactionId) => {
-    const res = await api.get(`/api/qr/transaction/${transactionId}`);
-    return res.data.data;
+  async verifyQR(code) {
+    const res = await api.post('/qr/verify', { code })
+    return res.data
   },
-
-  lookupQR: async (code) => {
-    const res = await api.get(`/api/qr/${code}`);
-    return res.data.data;
-  },
-};
+}

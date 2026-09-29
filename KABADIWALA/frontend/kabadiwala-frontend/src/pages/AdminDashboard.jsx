@@ -1,171 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, TrendingUp, Package, Wallet, Scale } from 'lucide-react';
-import api from '../services/api';
-import Loader from '../components/common/Loader';
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
+import Navbar from '../components/common/Navbar'
+import Footer from '../components/common/Footer'
+import api from '../services/api'
+import {
+  Users, Truck, Package, Activity, RefreshCw, Shield, TrendingUp
+} from 'lucide-react'
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
+  const { user } = useAuth()
+  const [stats, setStats] = useState({ totalUsers: 0, totalCollectors: 0, totalPickups: 0, totalRecycled: 0 })
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('overview')
 
-  useEffect(() => {
-    fetchAdminData();
-  }, []);
-
-  const fetchAdminData = async () => {
+  const loadData = async () => {
+    setLoading(true)
     try {
-      const [statsRes, alertsRes] = await Promise.all([
-        api.get('/api/admin/dashboard'),
-        api.get('/api/admin/fraud/alerts'),
-      ]);
-      setStats(statsRes.data?.data || {});
-      setAlerts(alertsRes.data?.data || []);
-    } catch (err) {
-      console.error('Failed to load admin data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const [sRes, uRes] = await Promise.allSettled([
+        api.get('/admin/stats'),
+        api.get('/admin/users'),
+      ])
+      if (sRes.status === 'fulfilled') setStats(sRes.value.data?.data || stats)
+      if (uRes.status === 'fulfilled') setUsers(uRes.value.data?.data || [])
+    } catch {}
+    setLoading(false)
+  }
 
-  const resolveAlert = async (id) => {
-    setActionLoading(id);
-    try {
-      await api.put(`/api/admin/fraud/alerts/${id}/resolve?notes=Resolved+by+admin`);
-      await fetchAdminData();
-    } catch (err) {
-      console.error('Failed to resolve alert', err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  if (loading) return <Loader text="Loading Admin Console..." />;
+  useEffect(() => { loadData() }, [])
 
   return (
-    <div className="page-wrapper" style={{ padding: 'calc(var(--nav-height) + 2rem) 0 3rem' }}>
-      <div className="container">
-        {/* Header */}
-        <div style={{ marginBottom: '2rem', animation: 'fadeIn 0.4s ease forwards' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.75rem', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 'var(--radius-full)', marginBottom: '0.75rem' }}>
-            <Shield size={14} color="var(--blue-400)" />
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--blue-400)' }}>System Administration</span>
+    <div className="page-wrapper">
+      <Navbar />
+      <div className="main-content">
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 className="page-title">Admin Dashboard 🔧</h1>
+            <p className="page-subtitle">System overview &amp; management</p>
           </div>
-          <h1 style={{ fontSize: '1.75rem' }}>
-            Operations & <span className="gradient-text">Fraud Console</span>
-          </h1>
-          <p className="text-muted text-sm">Platform monitoring, system health, and anomaly detection</p>
+          <button className="btn btn-ghost btn-sm" onClick={loadData}><RefreshCw size={14} /> Refresh</button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid-4" style={{ marginBottom: '2.5rem' }}>
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span className="text-muted text-xs">TOTAL PICKUPS</span>
-              <Package size={18} color="var(--green-400)" />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats?.totalPickups || 0}</div>
-            <div className="text-muted text-xs" style={{ marginTop: '0.25rem' }}>
-              {stats?.completedPickups || 0} completed · {stats?.pendingPickups || 0} pending
-            </div>
+        {/* Stats */}
+        <div className="grid-4 mb-4">
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--info)' }}><Users size={22} /></div>
+            <div className="stat-value">{stats.totalUsers || users.length}</div>
+            <div className="stat-label">Total Users</div>
           </div>
-
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span className="text-muted text-xs">PLATFORM REVENUE</span>
-              <Wallet size={18} color="var(--teal-400)" />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>₹{parseFloat(stats?.totalRevenueINR || 0).toFixed(2)}</div>
-            <div className="text-muted text-xs" style={{ marginTop: '0.25rem' }}>Disbursed to sellers & collectors</div>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--primary)' }}><Truck size={22} /></div>
+            <div className="stat-value">{stats.totalCollectors || 0}</div>
+            <div className="stat-label">Collectors</div>
           </div>
-
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span className="text-muted text-xs">WASTE RECYCLED</span>
-              <Scale size={18} color="var(--amber-400)" />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{parseFloat(stats?.totalWeightRecycledKg || 0).toFixed(1)} kg</div>
-            <div className="text-muted text-xs" style={{ marginTop: '0.25rem' }}>Diverted from landfills</div>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--accent)' }}><Package size={22} /></div>
+            <div className="stat-value">{stats.totalPickups || 0}</div>
+            <div className="stat-label">Total Pickups</div>
           </div>
-
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span className="text-muted text-xs">FRAUD ALERTS</span>
-              <AlertTriangle size={18} color="var(--red-400)" />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700, color: alerts.filter(a => !a.resolved).length > 0 ? 'var(--red-400)' : 'var(--text-primary)' }}>
-              {alerts.filter(a => !a.resolved).length}
-            </div>
-            <div className="text-muted text-xs" style={{ marginTop: '0.25rem' }}>Requires administrative review</div>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa' }}><TrendingUp size={22} /></div>
+            <div className="stat-value">{stats.totalRecycled || 0} kg</div>
+            <div className="stat-label">Waste Recycled</div>
           </div>
         </div>
 
-        {/* Fraud Detection Table */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.15rem' }}>Security & Fraud Audits</h2>
-            <span className="text-xs text-muted">Auto-detected anomalies</span>
-          </div>
-
-          {alerts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              <CheckCircle size={32} color="var(--green-400)" style={{ margin: '0 auto 0.75rem' }} />
-              <p>No fraud alerts or suspicious discrepancies detected.</p>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>ID</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>SEVERITY</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>TRIGGER</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>DETAILS</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>STATUS</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {alerts.map((alert) => (
-                    <tr key={alert.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>#{alert.id}</td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        <span className={`badge ${alert.severity === 'HIGH' ? 'badge-red' : alert.severity === 'MEDIUM' ? 'badge-amber' : 'badge-blue'}`}>
-                          {alert.severity || 'LOW'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>{alert.ruleTriggered}</td>
-                      <td style={{ padding: '0.75rem 0.5rem', maxWidth: '300px' }}>{alert.details}</td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        {alert.resolved ? (
-                          <span style={{ color: 'var(--green-400)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <CheckCircle size={14} /> Resolved
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--red-400)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <AlertTriangle size={14} /> Open
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        {!alert.resolved && (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => resolveAlert(alert.id)}
-                            disabled={actionLoading === alert.id}
-                          >
-                            {actionLoading === alert.id ? 'Resolving...' : 'Resolve'}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* Tabs */}
+        <div className="tabs">
+          {['overview', 'users', 'system'].map(t => (
+            <button key={t} className={`tab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
         </div>
+
+        {activeTab === 'overview' && (
+          <div className="fade-in">
+            <h3 className="section-title">System Status</h3>
+            <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <Activity size={22} color="var(--primary)" />
+              <div>
+                <p className="font-semibold">All Systems Operational</p>
+                <p className="text-muted text-sm">Backend, Database, and AI services are running</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="fade-in">
+            <h3 className="section-title">User Management</h3>
+            {loading ? (
+              <div className="loading-overlay"><div className="spinner"></div><span>Loading users...</span></div>
+            ) : users.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">👥</div>
+                <div className="empty-state-title">No users loaded</div>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td className="text-muted">#{u.id}</td>
+                        <td>{u.name}</td>
+                        <td className="text-muted">{u.email}</td>
+                        <td><span className="badge badge-blue">{u.role || 'USER'}</span></td>
+                        <td><span className="badge badge-green">{u.enabled !== false ? 'Active' : 'Disabled'}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'system' && (
+          <div className="fade-in">
+            <h3 className="section-title">System Configuration</h3>
+            <div className="card">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={18} color="var(--primary)" />
+                <span className="font-semibold">Security</span>
+              </div>
+              <p className="text-muted text-sm">JWT authentication enabled. Spring Security active.</p>
+            </div>
+          </div>
+        )}
       </div>
+      <Footer />
     </div>
-  );
+  )
 }

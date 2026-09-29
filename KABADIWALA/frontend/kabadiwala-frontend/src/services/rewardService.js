@@ -1,33 +1,16 @@
-import api from './api';
+import api from './api'
 
 export const rewardService = {
-  getRewards: async () => {
-    const res = await api.get('/api/rewards');
-    return res.data.data;
+  async getCatalog() {
+    const res = await api.get('/rewards/catalog')
+    return res.data
   },
-
-  getMyPoints: async () => {
-    const res = await api.get('/api/points');
-    return res.data.data;
+  async redeemReward(rewardId) {
+    const res = await api.post('/rewards/redeem', { rewardId })
+    return res.data
   },
-
-  getBadges: async () => {
-    const res = await api.get('/api/badges');
-    return res.data.data;
+  async getMyRewards() {
+    const res = await api.get('/rewards/my-rewards')
+    return res.data
   },
-
-  getChallenges: async () => {
-    const res = await api.get('/api/challenges');
-    return res.data.data;
-  },
-
-  redeemReward: async (data) => {
-    const res = await api.post('/api/redemptions', data);
-    return res.data.data;
-  },
-
-  getRedemptionHistory: async () => {
-    const res = await api.get('/api/redemptions');
-    return res.data.data;
-  },
-};
+}
