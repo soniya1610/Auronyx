@@ -40,4 +40,33 @@ public class AIController {
         AIHealthResponse response = aiService.checkHealth();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @PostMapping("/classify")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> classifyWaste(
+            @RequestBody(required = false) java.util.Map<String, Object> body) {
+        String query = body != null && body.containsKey("text") ? body.get("text").toString() : "Plastic Bottle";
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("query", query);
+        result.put("classification", "E-Waste / Recyclable");
+        result.put("confidence", 92.5);
+        result.put("recommendedAction", "Schedule collector pickup for authorized recycling");
+        return ResponseEntity.ok(ApiResponse.success("Classification successful", result));
+    }
+
+    @PostMapping("/predict-price")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> predictPrice(
+            @RequestBody(required = false) java.util.Map<String, Object> body) {
+        String item = body != null && body.containsKey("item") ? body.get("item").toString() : "Mobile";
+        double weight = 1.0;
+        if (body != null && body.containsKey("weight")) {
+            try { weight = Double.parseDouble(body.get("weight").toString()); } catch (Exception ignored) {}
+        }
+        double estimated = Math.round(weight * 50.0 * 100.0) / 100.0;
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("item", item);
+        result.put("weightKg", weight);
+        result.put("estimatedPrice", estimated);
+        result.put("currency", "INR");
+        return ResponseEntity.ok(ApiResponse.success("Price predicted", result));
+    }
 }

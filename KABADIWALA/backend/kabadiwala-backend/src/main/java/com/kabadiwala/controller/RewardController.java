@@ -47,6 +47,16 @@ public class RewardController {
                 rewardService.getAllActiveRewards()));
     }
 
+    @GetMapping("/catalog")
+    public ResponseEntity<ApiResponse<List<Reward>>> getCatalog() {
+        return getAvailableRewards();
+    }
+
+    @GetMapping("/my-rewards")
+    public ResponseEntity<ApiResponse<List<Redemption>>> getMyRewards() {
+        return getMyRedemptions();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Reward>> getRewardById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Reward retrieved", rewardService.getRewardById(id)));

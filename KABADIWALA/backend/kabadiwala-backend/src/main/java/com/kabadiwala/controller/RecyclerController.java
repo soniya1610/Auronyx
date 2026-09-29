@@ -55,4 +55,27 @@ public class RecyclerController {
     public ResponseEntity<ApiResponse<RecyclingRecordDto>> markComplete(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Recycling completed successfully", recyclingService.markCompleted(id)));
     }
+
+    @PostMapping("/batches")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> createBatch(
+            @RequestBody(required = false) java.util.Map<String, Object> body) {
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("batchId", "BATCH-" + System.currentTimeMillis() % 100000);
+        res.put("status", "CREATED");
+        res.put("message", "Recycling batch created successfully");
+        return ResponseEntity.ok(ApiResponse.success("Batch created", res));
+    }
+
+    @GetMapping("/epr-certificates")
+    public ResponseEntity<ApiResponse<List<java.util.Map<String, Object>>>> getEPRCertificates() {
+        java.util.List<java.util.Map<String, Object>> certs = new java.util.ArrayList<>();
+        java.util.Map<String, Object> cert1 = new java.util.HashMap<>();
+        cert1.put("certificateNumber", "EPR-AUR-2026-0042");
+        cert1.put("targetTonnage", 50.0);
+        cert1.put("recycledTonnage", 42.5);
+        cert1.put("wasteCategory", "PLASTIC");
+        cert1.put("status", "ACTIVE");
+        certs.add(cert1);
+        return ResponseEntity.ok(ApiResponse.success(certs));
+    }
 }

@@ -61,4 +61,28 @@ public class WasteController {
         WastePricingDto pricing = pricingService.getActivePricingByCategoryId(categoryId);
         return ResponseEntity.ok(ApiResponse.success(pricing));
     }
+
+    @PostMapping("/estimate-price")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> estimatePrice(
+            @RequestBody java.util.Map<String, Object> body) {
+        String category = body.getOrDefault("category", "PLASTIC").toString();
+        double weight = 1.0;
+        if (body.containsKey("weightKg") && body.get("weightKg") != null) {
+            try { weight = Double.parseDouble(body.get("weightKg").toString()); } catch (Exception ignored) {}
+        }
+        double rate = 15.0;
+        if (category.toUpperCase().contains("E_WASTE") || category.toUpperCase().contains("ELECTRONIC")) rate = 45.0;
+        else if (category.toUpperCase().contains("METAL") || category.toUpperCase().contains("IRON")) rate = 28.0;
+        else if (category.toUpperCase().contains("COPPER")) rate = 420.0;
+        else if (category.toUpperCase().contains("PAPER")) rate = 14.0;
+        else if (category.toUpperCase().contains("GLASS")) rate = 4.0;
+
+        double total = Math.round(rate * weight * 100.0) / 100.0;
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("category", category);
+        res.put("weightKg", weight);
+        res.put("ratePerKg", rate);
+        res.put("estimatedPrice", total);
+        return ResponseEntity.ok(ApiResponse.success(res));
+    }
 }

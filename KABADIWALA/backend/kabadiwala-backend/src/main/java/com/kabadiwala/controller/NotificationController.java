@@ -32,6 +32,18 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read", null));
     }
 
+    @PutMapping("/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        List<Notification> list = notificationService.getUserNotifications(userId);
+        for (Notification n : list) {
+            if (!Boolean.TRUE.equals(n.getIsRead())) {
+                notificationService.markAsRead(n.getId());
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", null));
+    }
+
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount() {
         Long userId = SecurityUtils.getCurrentUserId();

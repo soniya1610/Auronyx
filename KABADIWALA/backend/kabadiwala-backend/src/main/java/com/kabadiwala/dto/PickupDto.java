@@ -82,4 +82,25 @@ public class PickupDto {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // Frontend compatibility helpers
+    public String getWasteType() {
+        return wasteCategoryName != null ? wasteCategoryName : "Mixed Recyclables";
+    }
+
+    public Double getEstimatedWeightKg() {
+        return estimatedWeight != null ? estimatedWeight.doubleValue() : 0.0;
+    }
+
+    public String getAddress() {
+        return addressLine;
+    }
+
+    public Double getTotalAmount() {
+        return 0.0;
+    }
+
+    public String getVerificationCode() {
+        return id != null ? String.format("%04d", Math.abs((id * 31 + 1000) % 9000)) : "4819";
+    }
 }

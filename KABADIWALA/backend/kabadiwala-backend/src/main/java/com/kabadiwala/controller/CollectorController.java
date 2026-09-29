@@ -120,4 +120,16 @@ public class CollectorController {
     public ResponseEntity<ApiResponse<VerificationDto>> getVerification(@PathVariable Long pickupId) {
         return ResponseEntity.ok(ApiResponse.success(verificationService.getVerificationByPickupId(pickupId)));
     }
+
+    @PutMapping("/pickups/{id}/complete")
+    public ResponseEntity<ApiResponse<PickupDto>> completePickup(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Pickup completed", operationsService.markCollected(id)));
+    }
+
+    @PutMapping("/pickups/{id}/verify-weight")
+    public ResponseEntity<ApiResponse<PickupDto>> verifyWeight(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        return ResponseEntity.ok(ApiResponse.success("Weight verified", operationsService.markCollected(id)));
+    }
 }

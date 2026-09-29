@@ -46,6 +46,17 @@ public class AdminController {
                 analyticsService.getAdminSummary()));
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getStats() {
+        return getDashboard();
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
+        return ResponseEntity.ok(ApiResponse.success("All users retrieved",
+                userService.getAllUsers()));
+    }
+
     @GetMapping("/analytics/rewards")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getRewardsAnalytics() {
         return ResponseEntity.ok(ApiResponse.success("Rewards analytics retrieved",

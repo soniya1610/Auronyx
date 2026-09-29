@@ -34,10 +34,13 @@ public class WalletController {
     }
 
     @GetMapping("/balance")
-    public ResponseEntity<ApiResponse<BigDecimal>> getBalance() {
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getBalance() {
         User user = SecurityUtils.getCurrentUser();
         Wallet wallet = walletService.getOrCreateWallet(user);
-        return ResponseEntity.ok(ApiResponse.success(wallet.getBalance()));
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("balance", wallet.getBalance());
+        map.put("currency", wallet.getCurrency());
+        return ResponseEntity.ok(ApiResponse.success(map));
     }
 
     @GetMapping("/transactions")

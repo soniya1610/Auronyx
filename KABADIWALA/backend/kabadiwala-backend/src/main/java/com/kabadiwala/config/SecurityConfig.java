@@ -41,10 +41,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/health", "/api/config", "/api/constants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/waste/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/waste/items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/waste/prices/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/waste/estimate-price").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rewards", "/api/rewards/catalog").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ai/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ai/predict-price", "/api/ai/classify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/qr/{code}/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/qr/{code}").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
