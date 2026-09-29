@@ -1,0 +1,27 @@
+category,price,unit,condition,source,retrieved_on,condition_group
+PCB,394.08,per_kg,not_specified,Scrapprice,9/23/2026,not_specified
+Washing Machine,667.54,per_piece,not_specified,Scrapprice,9/23/2026,not_specified
+Mobile,300.0,per_piece,not_specified,Scrappbazaar,9/11/2026,not_specified
+Battery,85.0,per_kg,not_specified,Scrappbazaar,9/11/2026,not_specified
+Washing Machine,700.0,per_piece,varies_by_type_condition,Scrappbazaar,9/11/2026,varies
+Washing Machine,800.0,per_piece,fully_or_semi_automatic,Scrappbazaar,9/11/2026,automatic
+Television,200.0,per_piece,varies_by_size_type,Scrappbazaar,9/11/2026,varies
+Microwave,300.0,per_piece,not_specified,Scrappbazaar,9/11/2026,not_specified
+Printer,20.0,per_kg,not_specified,Scrappbazaar,9/11/2026,not_specified
+Mobile,80.0,per_piece,not_specified,ScrapExpress,9/24/2026,not_specified
+Printer,15.0,per_kg,not_specified,ScrapExpress,9/24/2026,not_specified
+Microwave,200.0,per_piece,not_specified,ScrapExpress,9/24/2026,not_specified
+Washing Machine,500.0,per_piece,not_specified,ScrapExpress,9/24/2026,not_specified
+Battery,95.0,per_kg,not_specified,ScrapExpress,9/24/2026,not_specified
+Microwave,100.0,per_piece,range_low,RecycleOne,9/24/2026,low
+Microwave,200.0,per_piece,range_high,RecycleOne,9/24/2026,high
+Television,20.0,per_kg,LCD_monitor,RecycleOne,9/24/2026,lcd
+Television,80.0,per_piece,CRT_range_low,RecycleOne,9/24/2026,low
+Television,150.0,per_piece,CRT_range_high,RecycleOne,9/24/2026,high
+Washing Machine,350.0,per_piece,top_load_range_low,RecycleOne,9/24/2026,low
+Washing Machine,600.0,per_piece,top_load_range_high,RecycleOne,9/24/2026,high
+Washing Machine,500.0,per_piece,front_load_range_low,RecycleOne,9/24/2026,low
+Washing Machine,800.0,per_piece,front_load_range_high,RecycleOne,9/24/2026,high
+Battery,70.0,per_kg,without_water,RecycleOne,9/24/2026,without_water
+Mobile,15.0,per_piece,range_low,RecycleOne,9/24/2026,low
+Mobile,110.0,per_piece,range_high,RecycleOne,9/24/2026,high
