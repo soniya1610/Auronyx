@@ -41,10 +41,8 @@ public class User {
 
     private String pincode;
 
-    @Column(precision = 10, scale = 8)
     private Double latitude;
 
-    @Column(precision = 11, scale = 8)
     private Double longitude;
 
     @Column(name = "preferred_language", length = 20)

@@ -58,17 +58,26 @@ public class SecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public system and auth endpoints
+                        // Public system, auth, waste, and AI endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health", "/api/config", "/api/constants").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/waste/**").permitAll()
+                        .requestMatchers("/api/waste/estimate-price").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rewards/catalog").permitAll()
                         // Public discovery endpoints
                         .requestMatchers(HttpMethod.GET, "/api/collectors/**").permitAll()
-                        // Collector profile management (COLLECTOR role required)
-                        .requestMatchers("/api/collector/**").hasRole("COLLECTOR")
-                        // Recycler profile management (RECYCLER role required)
-                        .requestMatchers("/api/recycler/**").hasRole("RECYCLER")
-                        // User management and notifications
+                        // Collector operations
+                        .requestMatchers("/api/collector/**").hasAnyRole("COLLECTOR", "ADMIN")
+                        // Recycler operations
+                        .requestMatchers("/api/recycler/**").hasAnyRole("RECYCLER", "ADMIN")
+                        // Admin operations
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // User management, pickups, wallet, rewards, and notifications
                         .requestMatchers("/api/users/me/**").authenticated()
+                        .requestMatchers("/api/pickups/**").authenticated()
+                        .requestMatchers("/api/wallet/**").authenticated()
+                        .requestMatchers("/api/rewards/**").authenticated()
                         .requestMatchers("/api/notifications/**").authenticated()
                         // Any other request requires authentication
                         .anyRequest().authenticated()
