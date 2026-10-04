@@ -30,7 +30,7 @@ public class RewardController {
     private final GamificationService gamificationService;
 
     public RewardController(RewardService rewardService,
-                             RedemptionService redemptionService,
+                            RedemptionService redemptionService,
                              PointService pointService,
                              GamificationService gamificationService) {
         this.rewardService      = rewardService;

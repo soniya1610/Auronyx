@@ -1,7 +1,7 @@
 -- V8: Module 3 Full Implementation — Referrals & User Referral Code
 
 -- Add referral_code column to users (nullable, backward-compatible)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR(20) UNIQUE;
+ALTER TABLE users ADD COLUMN referral_code VARCHAR(20) UNIQUE;
 
 -- Referrals table
 CREATE TABLE IF NOT EXISTS referrals (
